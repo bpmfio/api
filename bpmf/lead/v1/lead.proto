@@ -1,0 +1,130 @@
+// bpmf.lead.v1 is the sales lead collection API, the entry point of the
+// bpmf sales funnel.
+syntax = "proto3";
+
+package bpmf.lead.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/bpmfio/api/bpmf/lead/v1;leadv1";
+
+// Lead is a sales prospect collected from a public marketing channel.
+//
+// A lead carries the contact information needed for follow-up, plus the
+// channel attribution needed to measure promotion cost per channel.
+message Lead {
+  // Resource name of the lead, in the form `leads/{lead}`.
+  string name = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Company name of the prospect.
+  string company = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Name of the contact person at the prospect company.
+  string contact_name = 3;
+
+  // Email address of the contact person.
+  string email = 4 [(google.api.field_behavior) = REQUIRED];
+
+  // Phone number of the contact person, preferably in E.164 format.
+  string phone = 5;
+
+  // Size of the prospect company, used to qualify leads for human
+  // follow-up in the mixed sales model.
+  CompanySize company_size = 6;
+
+  // Free-form message from the prospect describing their needs.
+  string message = 7;
+
+  // Channel the lead was collected from.
+  Channel channel = 8 [(google.api.field_behavior) = REQUIRED];
+
+  // UTM source of the first marketing touch that led to this submission,
+  // used for channel attribution and promotion cost analysis.
+  string utm_source = 9;
+
+  // UTM medium of the first marketing touch.
+  string utm_medium = 10;
+
+  // UTM campaign of the first marketing touch.
+  string utm_campaign = 11;
+
+  // Time the lead was submitted.
+  google.protobuf.Timestamp create_time = 12 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// CompanySize is the size of a prospect company by employee count.
+enum CompanySize {
+  // Company size not specified.
+  COMPANY_SIZE_UNSPECIFIED = 0;
+
+  // 1 to 9 employees.
+  COMPANY_SIZE_MICRO = 1;
+
+  // 10 to 49 employees.
+  COMPANY_SIZE_SMALL = 2;
+
+  // 50 to 249 employees.
+  COMPANY_SIZE_MEDIUM = 3;
+
+  // 250 to 999 employees.
+  COMPANY_SIZE_LARGE = 4;
+
+  // 1000 or more employees.
+  COMPANY_SIZE_ENTERPRISE = 5;
+}
+
+// Channel is the public channel a lead was collected from.
+enum Channel {
+  // Channel not specified.
+  CHANNEL_UNSPECIFIED = 0;
+
+  // The product website, e.g. a "request a trial" form.
+  CHANNEL_WEBSITE = 1;
+
+  // WeCom (企业微信), e.g. a staff conversation or a QR code entry.
+  CHANNEL_WECOM = 2;
+
+  // A referral from an existing customer or partner.
+  CHANNEL_REFERRAL = 3;
+
+  // A community space such as a forum or a chat group.
+  CHANNEL_COMMUNITY = 4;
+
+  // A channel not covered by the values above.
+  CHANNEL_OTHER = 5;
+}
+
+// SubmitLeadRequest is the request message for LeadService.SubmitLead.
+message SubmitLeadRequest {
+  // The lead to submit. `company`, `email`, and `channel` are required;
+  // all other fields are optional.
+  Lead lead = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Client-generated id for this submission, used to de-duplicate repeated
+  // form posts (e.g. a double click or a retry). Re-submitting the same
+  // `request_id` returns the original lead instead of creating a duplicate.
+  string request_id = 2;
+}
+
+// SubmitLeadResponse is the response message for LeadService.SubmitLead.
+message SubmitLeadResponse {
+  // The stored lead, including its server-assigned `name` and `create_time`.
+  Lead lead = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// LeadService collects sales leads from public channels. It is the single
+// entry point of the sales funnel MVP.
+service LeadService {
+  // Submits a sales lead.
+  //
+  // Leads are qualified downstream: high-value leads (e.g. large companies
+  // or strong intent signals) are routed to human follow-up, while the rest
+  // enter the self-service nurture flow.
+  //
+  // Returns the stored lead in `lead`, including its server-assigned `name`
+  // and `create_time`. Returns INVALID_ARGUMENT if `lead` is missing or misses
+  // required fields. Returns RESOURCE_EXHAUSTED if the caller is rate
+  // limited.
+  rpc SubmitLead(SubmitLeadRequest) returns (SubmitLeadResponse);
+}

@@ -1,0 +1,10 @@
+version: v2
+# Generated Go code is committed to this repository so that consumers can
+# `go get bpmf.io/api`. Run `make generate` after changing any .proto file.
+plugins:
+  - remote: buf.build/protocolbuffers/go:v1.36.12
+    out: .
+    opt: paths=source_relative
+  - remote: buf.build/grpc/go:v1.6.2
+    out: .
+    opt: paths=source_relative

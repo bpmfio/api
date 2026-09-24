@@ -7,7 +7,7 @@ package bpmf.lead.v1;
 import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/bpmfio/api/bpmf/lead/v1;leadv1";
+option go_package = "bpmf.io/api/bpmf/lead/v1;leadv1";
 
 // Lead is a sales prospect collected from a public marketing channel.
 //

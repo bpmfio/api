@@ -1,9 +1,14 @@
 BUF ?= buf
 
-.PHONY: build lint format breaking check
+.PHONY: build generate lint format breaking check
 
 build:
 	$(BUF) build
+
+# Regenerates the committed Go code from the protos. Run this after every
+# .proto change and commit the regenerated files together with it.
+generate:
+	$(BUF) generate
 
 lint:
 	$(BUF) lint
